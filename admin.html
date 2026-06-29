@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Slideshow</title>
-    <!-- โหลด Library พื้นฐาน -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <!-- โหลด DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <link rel="icon" href="data:,">
@@ -20,44 +18,62 @@
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
 
-    <!-- ================= ส่วนหน้า Login ================= -->
+    <!-- ส่วน Login -->
     <div id="loginSection" class="flex items-center justify-center min-h-screen">
         <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full">
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">เข้าสู่ระบบ Admin</h2>
             <form id="loginForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                    <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                    <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500" required>
                 </div>
                 <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">เข้าสู่ระบบ</button>
             </form>
         </div>
     </div>
 
-    <!-- ================= ส่วนหน้า Dashboard (ซ่อนไว้ก่อน) ================= -->
+    <!-- ส่วน Dashboard -->
     <div id="adminSection" class="hidden max-w-6xl mx-auto p-4 py-8">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
             <h2 class="text-3xl font-bold text-gray-800">ระบบจัดการ Slideshow</h2>
-            <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 shadow transition">ออกจากระบบ</button>
+            <button onclick="logout(false)" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition shadow">ออกจากระบบ</button>
         </div>
 
-        <!-- กล่องอัปโหลด -->
-        <div class="bg-white rounded-xl shadow p-6 mb-8">
-            <h3 class="text-xl font-semibold mb-4 text-gray-700">อัปโหลดรูปภาพใหม่ (เลือกได้หลายรูป)</h3>
-            <form id="uploadForm" class="flex flex-col md:flex-row gap-4">
-                <input type="file" id="fileInput" accept="image/*" class="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" multiple required>
-                <button type="submit" id="submitBtn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-700 transition shadow">เริ่มอัปโหลด</button>
-            </form>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- กล่องอัปโหลดรูปภาพ -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">อัปโหลดรูปภาพใหม่</h3>
+                <form id="uploadForm" class="space-y-4 mt-4">
+                    <input type="file" id="fileInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border" multiple required>
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition shadow">เริ่มอัปโหลดรูป</button>
+                </form>
+            </div>
+
+            <!-- กล่องตั้งค่าข้อความวิ่ง -->
+            <div class="bg-white rounded-xl shadow p-6 border-t-4 border-yellow-400">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">ตั้งค่าข้อความประกาศ (ตัววิ่ง)</h3>
+                <form id="settingsForm" class="space-y-4 mt-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ข้อความแถบด้านบน (Header)</label>
+                        <input type="text" id="headerText" class="w-full px-4 py-2 border rounded-lg focus:ring-yellow-500 bg-gray-50" placeholder="พิมพ์ข้อความด้านบน...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ข้อความแถบด้านล่าง (Footer)</label>
+                        <input type="text" id="footerText" class="w-full px-4 py-2 border rounded-lg focus:ring-yellow-500 bg-gray-50" placeholder="พิมพ์ข้อความด้านล่าง...">
+                    </div>
+                    <button type="submit" id="saveSettingBtn" class="w-full bg-yellow-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-600 transition shadow">บันทึกข้อความ</button>
+                </form>
+            </div>
         </div>
 
         <!-- กล่องตาราง DataTables -->
         <div class="bg-white rounded-xl shadow p-6">
-            <h3 class="text-xl font-semibold mb-4 text-gray-700">รายการรูปภาพทั้งหมด</h3>
-            <div class="overflow-x-auto">
+            <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">รายการรูปภาพทั้งหมด</h3>
+            <div class="overflow-x-auto mt-4">
                 <table id="myTable" class="display w-full text-left border-collapse">
                     <thead>
                         <tr>
@@ -67,9 +83,7 @@
                             <th class="border-b p-3 bg-gray-50 text-center">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody">
-                        <!-- ข้อมูลจะถูกดึงมาใส่ตรงนี้อัตโนมัติ -->
-                    </tbody>
+                    <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -78,27 +92,31 @@
     <script>
         // *** ใส่ Web App URL ของคุณตรงนี้ ***
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg1slFWJbXcdWV6VuQHd4nj5khVvjPWpqXC920AdoUa3GQC7-uAvkUDcmPeNpdhnvp/exec';
+        let dataTable;
 
-        let dataTable; // ตัวแปรเก็บตาราง
+        let idleTimer;
+        const TIMEOUT_DURATION = 30 * 60 * 1000; 
+        function resetIdleTimer() {
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => logout(true), TIMEOUT_DURATION);
+            }
+        }
+        ['mousemove', 'keydown', 'scroll', 'click'].forEach(e => window.addEventListener(e, resetIdleTimer));
 
-        // ----- ตรวจสอบสถานะ Login เมื่อเปิดหน้าเว็บ -----
         if(sessionStorage.getItem('isLoggedIn') === 'true') {
             showAdminDashboard();
         }
 
-        // ----- ระบบ Login -----
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
-            
             Swal.fire({ title: 'กำลังตรวจสอบ...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
             try {
-                // ส่งค่าไปตรวจสอบที่ Google Apps Script ผ่าน GET Request
                 const res = await fetch(`${SCRIPT_URL}?action=login&user=${user}&pass=${pass}`);
                 const data = await res.json();
-
                 if (data.status === 'success') {
                     Swal.close();
                     sessionStorage.setItem('isLoggedIn', 'true');
@@ -106,134 +124,127 @@
                 } else {
                     Swal.fire('ข้อมูลไม่ถูกต้อง', 'Username หรือ Password ผิด!', 'error');
                 }
-            } catch (error) {
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
-            }
+            } catch (error) { Swal.fire('ผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); }
         });
 
-        // สลับหน้าจอ
         function showAdminDashboard() {
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('adminSection').classList.remove('hidden');
-            loadTableData(); // โหลดข้อมูลเข้าตารางทันที
+            resetIdleTimer();
+            loadSettings(); // โหลดข้อความวิ่ง
+            loadTableData(); // โหลดตารางรูป
         }
 
-        // ออกจากระบบ
-        function logout() {
+        function logout(isTimeout = false) {
             sessionStorage.removeItem('isLoggedIn');
-            location.reload();
+            clearTimeout(idleTimer);
+            if (isTimeout) {
+                Swal.fire({ title: 'หมดเวลาเชื่อมต่อ', text: 'ไม่ได้ใช้งานนานเกินไป กรุณาล็อกอินใหม่', icon: 'warning' })
+                .then(() => location.reload());
+            } else { location.reload(); }
         }
 
-        // ----- ระบบอัปโหลดรูป (ของเดิมที่ทำงานได้ดีอยู่แล้ว) -----
+        // โหลดข้อความวิ่งมาแสดงในช่อง Input
+        async function loadSettings() {
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getSettings`);
+                const data = await res.json();
+                if(data.status === 'success') {
+                    document.getElementById('headerText').value = data.header;
+                    document.getElementById('footerText').value = data.footer;
+                }
+            } catch (error) { console.error("โหลดข้อความไม่สำเร็จ"); }
+        }
+
+        // ระบบบันทึกข้อความวิ่ง
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveSettingBtn');
+            const header = document.getElementById('headerText').value;
+            const footer = document.getElementById('footerText').value;
+            
+            btn.disabled = true; btn.innerText = 'กำลังบันทึก...';
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'saveSettings', header: header, footer: footer })
+                });
+                Swal.fire('บันทึกสำเร็จ!', 'ข้อความวิ่งอัปเดตเรียบร้อยแล้ว (จะเปลี่ยนที่หน้าจอภายใน 5 นาที)', 'success');
+            } catch (error) {
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อความได้', 'error');
+            }
+            btn.disabled = false; btn.innerText = 'บันทึกข้อความ';
+        });
+
+        // อัปโหลดรูปภาพ
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const files = document.getElementById('fileInput').files;
             if (files.length === 0) return;
-            
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
-            Swal.fire({ title: 'กำลังอัปโหลด...', html: `กำลังประมวลผลไฟล์ (0/${files.length})`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'กำลังอัปโหลด...', html: `ประมวลผล (0/${files.length})`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             let successCount = 0;
             for (let i = 0; i < files.length; i++) {
                 Swal.getHtmlContainer().innerText = `กำลังส่งรูปที่ ${i + 1}/${files.length}`;
                 try {
                     const base64Data = await fileToBase64(files[i]);
-                    const payload = { filename: files[i].name, mimeType: files[i].type, base64: base64Data };
-                    
                     await fetch(SCRIPT_URL, {
                         method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({ filename: files[i].name, mimeType: files[i].type, base64: base64Data })
                     });
                     successCount++;
-                } catch (e) { console.error(e); }
+                } catch (e) {}
             }
-
             btn.disabled = false;
-            Swal.fire('อัปโหลดสำเร็จ!', `เพิ่มรูปภาพ ${successCount} รูปเข้าสู่ระบบแล้ว`, 'success');
+            Swal.fire('สำเร็จ!', `เพิ่ม ${successCount} รูปเข้าสู่ระบบแล้ว`, 'success');
             document.getElementById('uploadForm').reset();
-            
-            // สั่งโหลดตารางใหม่เพื่อโชว์รูปที่เพิ่งอัปโหลด
             setTimeout(loadTableData, 1500); 
         });
 
-        // ----- ระบบดึงข้อมูลมาแสดงใน DataTables (Read) -----
         async function loadTableData() {
             try {
                 const res = await fetch(`${SCRIPT_URL}?action=getImages`);
                 const result = await res.json();
-                
                 if (result.status === 'success') {
-                    // ล้างตารางเก่าทิ้งก่อน (ถ้ามี) เพื่อสร้างใหม่
-                    if ($.fn.DataTable.isDataTable('#myTable')) {
-                        $('#myTable').DataTable().destroy();
-                    }
+                    if ($.fn.DataTable.isDataTable('#myTable')) $('#myTable').DataTable().destroy();
                     
                     const tbody = document.getElementById('tableBody');
                     tbody.innerHTML = '';
-                    
                     result.data.forEach(item => {
-                        // แปลงลิงก์ให้แสดง Thumbnail ได้ในหน้า Admin (หลบ CORS ของ Drive)
                         let thumbUrl = item.url;
                         if (!thumbUrl.includes('googleusercontent') && !thumbUrl.includes('lh3.google')) {
                             const idMatch = thumbUrl.match(/id=([a-zA-Z0-9_-]+)/);
                             if (idMatch) thumbUrl = `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w200`;
                         }
-
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50 border-b">
-                                <td class="p-3"><img src="${thumbUrl}" class="h-16 w-24 object-cover rounded shadow border" onerror="this.src='https://via.placeholder.com/150x100?text=No+Preview'"></td>
-                                <td class="p-3 text-sm text-gray-700">${item.filename}</td>
-                                <td class="p-3 text-sm text-gray-600">${item.date}</td>
-                                <td class="p-3 text-center">
-                                    <button onclick="deleteRow(${item.row})" class="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 transition text-sm font-semibold">ลบรูปภาพ</button>
-                                </td>
+                                <td class="p-3"><img src="${thumbUrl}" class="h-16 w-24 object-cover rounded shadow" onerror="this.src='https://via.placeholder.com/150x100?text=No+Image'"></td>
+                                <td class="p-3 text-sm">${item.filename}</td>
+                                <td class="p-3 text-sm text-gray-500">${item.date}</td>
+                                <td class="p-3 text-center"><button onclick="deleteRow(${item.row})" class="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 transition text-sm font-semibold">ลบ</button></td>
                             </tr>
                         `;
                     });
-
-                    // เปิดใช้งาน DataTables
                     dataTable = $('#myTable').DataTable({
-                        "language": {
-                            "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
-                            "zeroRecords": "ไม่พบข้อมูลรูปภาพ",
-                            "info": "หน้า _PAGE_ จาก _PAGES_",
-                            "infoEmpty": "ไม่มีข้อมูล",
-                            "search": "ค้นหาไฟล์:",
-                            "paginate": { "first": "แรก", "last": "สุดท้าย", "next": "ถัดไป", "previous": "ก่อนหน้า" }
-                        },
-                        "pageLength": 5, // กำหนดให้โชว์หน้าละ 5 รูป
-                        "lengthMenu": [5, 10, 25, 50],
-                        "ordering": false // ปิดการเรียงอัตโนมัติ เพราะเราจัดเรียงจากล่าสุดมาจาก Backend แล้ว
+                        language: { lengthMenu: "หน้าละ _MENU_ รายการ", zeroRecords: "ไม่พบข้อมูล", info: "หน้า _PAGE_ / _PAGES_", search: "ค้นหา:", paginate: { first: "แรก", last: "สุดท้าย", next: "ถัดไป", previous: "ก่อนหน้า" } },
+                        pageLength: 5, lengthMenu: [5, 10, 25, 50], ordering: false 
                     });
                 }
-            } catch (error) {
-                console.error("โหลดข้อมูลตารางไม่สำเร็จ", error);
-            }
+            } catch (error) {}
         }
 
-        // ----- ระบบลบรูปภาพ (Delete) -----
         async function deleteRow(rowIndex) {
-            const result = await Swal.fire({
-                title: 'ยืนยันการลบ?',
-                text: "รูปภาพนี้จะถูกลบออกจากสไลด์โชว์ทันที",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ใช่, ลบเลย!',
-                cancelButtonText: 'ยกเลิก'
-            });
-
+            const result = await Swal.fire({ title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc2626', confirmButtonText: 'ใช่, ลบเลย!', cancelButtonText: 'ยกเลิก' });
             if (result.isConfirmed) {
                 Swal.fire({ title: 'กำลังลบ...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
                 try {
                     await fetch(`${SCRIPT_URL}?action=delete&row=${rowIndex}`);
-                    Swal.fire('ลบสำเร็จ!', 'ข้อมูลถูกลบออกจากระบบแล้ว', 'success');
-                    loadTableData(); // โหลดตารางใหม่หลังลบเสร็จ
-                } catch (error) {
-                    Swal.fire('ผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
-                }
+                    Swal.fire('ลบสำเร็จ!', 'ข้อมูลถูกลบแล้ว', 'success');
+                    loadTableData();
+                } catch (error) { Swal.fire('ผิดพลาด', 'ไม่สามารถลบได้', 'error'); }
             }
         }
 
@@ -241,7 +252,6 @@
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
                 reader.readAsDataURL(file);
             });
         }
