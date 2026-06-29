@@ -19,7 +19,8 @@
         }
         .marquee-content {
             display: inline-block; padding-left: 100%;
-            animation: marquee 20s linear infinite;
+            /* เราจะปรับความเร็ว 20s จากโค้ด Javascript แทนครับ */
+            animation: marquee 20s linear infinite; 
         }
         @keyframes marquee {
             0% { transform: translateX(0); }
@@ -36,11 +37,7 @@
         }
         .slide.active { opacity: 1; z-index: 10; }
         
-        .slide img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: contain; 
-        }
+        .slide img { width: 100%; height: 100%; object-fit: contain; }
 
         #progress-container {
             position: absolute; bottom: 0; left: 0;
@@ -82,8 +79,7 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg1slFWJbXcdWV6VuQHd4nj5khVvjPWpqXC920AdoUa3GQC7-uAvkUDcmPeNpdhnvp/exec';
         const SYNC_INTERVAL = 5 * 60 * 1000; 
 
-        // โครงสร้าง Config ตอนนี้จะมี duration มาด้วย (หน่วยเป็นวินาที)
-        let currentConfig = { images: [], header: '', footer: '', duration: 10 };
+        let currentConfig = { images: [], header: '', footer: '', duration: 10, marqueeSpeed: 20 };
         let currentIndex = 0;
         let slideInterval, progressTimeout;
 
@@ -97,6 +93,14 @@
 
         setTimeout(() => { document.getElementById('hint').style.opacity = '0'; }, 5000);
 
+        // ฟังก์ชันอัปเดตความเร็วข้อความวิ่ง
+        function updateMarqueeSpeed(speedInSeconds) {
+            const elements = document.querySelectorAll('.marquee-content');
+            elements.forEach(el => {
+                el.style.animationDuration = `${speedInSeconds}s`;
+            });
+        }
+
         async function fetchImages(isAutoSync = false) {
             try {
                 const response = await fetch(SCRIPT_URL);
@@ -105,21 +109,26 @@
                 if (data.status === 'error' || data.error) return;
 
                 const newDuration = parseInt(data.duration) || 10;
+                const newMarqueeSpeed = parseInt(data.marqueeSpeed) || 20;
 
-                // ตรวจสอบว่ามีการเปลี่ยนแปลงใดๆ รวมถึงระยะเวลาหรือไม่
+                // ตรวจสอบความเปลี่ยนแปลง
                 if (JSON.stringify(currentConfig.images) !== JSON.stringify(data.images) ||
                     currentConfig.header !== data.header || currentConfig.footer !== data.footer ||
-                    currentConfig.duration !== newDuration) {
+                    currentConfig.duration !== newDuration || currentConfig.marqueeSpeed !== newMarqueeSpeed) {
                     
                     currentConfig = {
                         images: data.images,
                         header: data.header,
                         footer: data.footer,
-                        duration: newDuration
+                        duration: newDuration,
+                        marqueeSpeed: newMarqueeSpeed
                     };
                     
                     document.getElementById('header-text').innerText = data.header;
                     document.getElementById('footer-text').innerText = data.footer;
+                    
+                    // อัปเดตความเร็วข้อความวิ่ง
+                    updateMarqueeSpeed(newMarqueeSpeed);
 
                     if (currentConfig.images.length > 0) {
                         document.getElementById('loader').style.display = 'none';
@@ -162,7 +171,6 @@
             currentIndex = 0;
             animateProgressBar();
 
-            // ใช้ค่าเวลาจากการตั้งค่า (แปลงจากวินาทีเป็นมิลลิวินาที)
             const msDuration = currentConfig.duration * 1000;
 
             slideInterval = setInterval(() => {
@@ -181,7 +189,6 @@
             
             clearTimeout(progressTimeout);
             progressTimeout = setTimeout(() => {
-                // ความเร็วในการวิ่งของแถบสัมพันธ์กับเวลาที่ตั้งค่า
                 bar.style.transition = `width ${msDuration}ms linear`;
                 bar.style.width = '100%';
             }, 50); 
