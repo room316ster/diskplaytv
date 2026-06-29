@@ -53,9 +53,9 @@
                 </form>
             </div>
 
-            <!-- กล่องตั้งค่าข้อความวิ่ง -->
+            <!-- กล่องตั้งค่าระบบ -->
             <div class="bg-white rounded-xl shadow p-6 border-t-4 border-yellow-400">
-                <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">ตั้งค่าข้อความประกาศ (ตัววิ่ง)</h3>
+                <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">ตั้งค่าระบบและข้อความวิ่ง</h3>
                 <form id="settingsForm" class="space-y-4 mt-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">ข้อความแถบด้านบน (Header)</label>
@@ -65,7 +65,12 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">ข้อความแถบด้านล่าง (Footer)</label>
                         <input type="text" id="footerText" class="w-full px-4 py-2 border rounded-lg focus:ring-yellow-500 bg-gray-50" placeholder="พิมพ์ข้อความด้านล่าง...">
                     </div>
-                    <button type="submit" id="saveSettingBtn" class="w-full bg-yellow-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-600 transition shadow">บันทึกข้อความ</button>
+                    <!-- ช่องรับเวลาแสดงภาพ -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เวลาสลับภาพ (วินาที)</label>
+                        <input type="number" id="slideDuration" min="3" max="3600" class="w-full px-4 py-2 border rounded-lg focus:ring-yellow-500 bg-gray-50" placeholder="10">
+                    </div>
+                    <button type="submit" id="saveSettingBtn" class="w-full bg-yellow-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-600 transition shadow">บันทึกการตั้งค่า</button>
                 </form>
             </div>
         </div>
@@ -131,8 +136,8 @@
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('adminSection').classList.remove('hidden');
             resetIdleTimer();
-            loadSettings(); // โหลดข้อความวิ่ง
-            loadTableData(); // โหลดตารางรูป
+            loadSettings(); 
+            loadTableData(); 
         }
 
         function logout(isTimeout = false) {
@@ -144,7 +149,6 @@
             } else { location.reload(); }
         }
 
-        // โหลดข้อความวิ่งมาแสดงในช่อง Input
         async function loadSettings() {
             try {
                 const res = await fetch(`${SCRIPT_URL}?action=getSettings`);
@@ -152,32 +156,32 @@
                 if(data.status === 'success') {
                     document.getElementById('headerText').value = data.header;
                     document.getElementById('footerText').value = data.footer;
+                    document.getElementById('slideDuration').value = data.duration;
                 }
-            } catch (error) { console.error("โหลดข้อความไม่สำเร็จ"); }
+            } catch (error) { console.error("โหลดการตั้งค่าไม่สำเร็จ"); }
         }
 
-        // ระบบบันทึกข้อความวิ่ง
         document.getElementById('settingsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('saveSettingBtn');
             const header = document.getElementById('headerText').value;
             const footer = document.getElementById('footerText').value;
+            const duration = parseInt(document.getElementById('slideDuration').value) || 10;
             
             btn.disabled = true; btn.innerText = 'กำลังบันทึก...';
 
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ action: 'saveSettings', header: header, footer: footer })
+                    body: JSON.stringify({ action: 'saveSettings', header: header, footer: footer, duration: duration })
                 });
-                Swal.fire('บันทึกสำเร็จ!', 'ข้อความวิ่งอัปเดตเรียบร้อยแล้ว (จะเปลี่ยนที่หน้าจอภายใน 5 นาที)', 'success');
+                Swal.fire('บันทึกสำเร็จ!', 'อัปเดตระบบเรียบร้อยแล้ว (จะเปลี่ยนที่หน้าจอสไลด์ภายใน 5 นาที)', 'success');
             } catch (error) {
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อความได้', 'error');
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกได้', 'error');
             }
-            btn.disabled = false; btn.innerText = 'บันทึกข้อความ';
+            btn.disabled = false; btn.innerText = 'บันทึกการตั้งค่า';
         });
 
-        // อัปโหลดรูปภาพ
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const files = document.getElementById('fileInput').files;
