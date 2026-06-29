@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Upload Image</title>
+    <title>Admin - Upload Multiple Images</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
     <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-        <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">ระบบอัปโหลดรูปภาพ</h2>
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">ระบบจัดการ Slideshow</h2>
+        <p class="text-sm text-gray-500 text-center mb-6">สามารถเลือกอัปโหลดพร้อมกันได้มากกว่า 1 รูป</p>
         
         <form id="uploadForm" class="space-y-4">
             <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition">
-                <input type="file" id="fileInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" required>
+                <input type="file" id="fileInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" multiple required>
             </div>
             
             <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition duration-300 shadow-md">
-                อัปโหลดเข้าสู่ Slideshow
+                เริ่มอัปโหลดเข้าสู่ระบบ
             </button>
         </form>
     </div>
 
     <script>
-        // *** นำ Web App URL ของ Apps Script มาใส่ตรงนี้ ***
+        // *** ใส่ Web App URL ตัวล่าสุดของคุณที่ได้จากการ Deploy ข้อแรกแทนที่ตรงนี้ ***
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg1slFWJbXcdWV6VuQHd4nj5khVvjPWpqXC920AdoUa3GQC7-uAvkUDcmPeNpdhnvp/exec';
 
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
@@ -33,63 +34,84 @@
             const fileInput = document.getElementById('fileInput');
             if (fileInput.files.length === 0) return;
             
-            const file = fileInput.files[0];
+            const files = fileInput.files;
+            const totalFiles = files.length;
             const btn = document.getElementById('submitBtn');
             
-            // แสดงสถานะโหลด
             btn.disabled = true;
-            btn.innerHTML = `
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg> กำลังอัปโหลด...`;
+            
+            // แสดง SweetAlert บล็อกหน้าจอขณะกำลังอัปโหลด
+            Swal.fire({
+                title: 'กำลังอัปโหลดรูปภาพ...',
+                html: `กำลังประมวลผลไฟล์ (0/${totalFiles})`,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
-            // อ่านไฟล์เป็น Base64
-            const reader = new FileReader();
-            reader.onload = async function() {
-                const base64Data = reader.result.split(',')[1];
+            let successCount = 0;
+            let failCount = 0;
+
+            // วนลูปส่งข้อมูลทีละรูปเพื่อความเสถียร
+            for (let i = 0; i < totalFiles; i++) {
+                const file = files[i];
+                Swal.getHtmlContainer().innerText = `กำลังส่งรูปที่ ${i + 1}/${totalFiles}: ${file.name}`;
                 
-                const payload = {
-                    filename: file.name,
-                    mimeType: file.type,
-                    base64: base64Data
-                };
-
                 try {
-                    // ใช้ text/plain ส่ง payload เพื่อหลีกเลี่ยงปัญหา CORS preflight
+                    const base64Data = await fileToBase64(file);
+                    const payload = {
+                        filename: file.name,
+                        mimeType: file.type,
+                        base64: base64Data
+                    };
+
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
                         body: JSON.stringify(payload)
                     });
                     
                     const result = await response.json();
-                    
-                    if(result.status === 'success') {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'อัปโหลดสำเร็จ!',
-                            text: 'รูปภาพถูกเพิ่มเข้าไปในระบบสไลด์แล้ว',
-                            confirmButtonColor: '#2563eb'
-                        });
-                        document.getElementById('uploadForm').reset();
+                    if (result.status === 'success') {
+                        successCount++;
                     } else {
-                        throw new Error(result.message);
+                        failCount++;
                     }
                 } catch (error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่',
-                        confirmButtonColor: '#dc2626'
-                    });
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = 'อัปโหลดเข้าสู่ Slideshow';
+                    failCount++;
                 }
-            };
+            }
+
+            // เปิดให้ปุ่มทำงานต่อเมื่อส่งเสร็จหมดแล้ว
+            btn.disabled = false;
             
-            reader.readAsDataURL(file);
+            if (failCount === 0) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'อัปโหลดสำเร็จทั้งหมด!',
+                    text: `เพิ่มรูปภาพจำนวน ${successCount} รูปเข้าสู่สไลด์แล้ว`,
+                    confirmButtonColor: '#2563eb'
+                });
+                document.getElementById('uploadForm').reset();
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'อัปโหลดเสร็จสิ้นแบบมีข้อผิดพลาด',
+                    text: `สำเร็จ ${successCount} รูป / ล้มเหลว ${failCount} รูป (กรุณาตรวจสอบสิทธิ์โฟลเดอร์)`,
+                    confirmButtonColor: '#2563eb'
+                });
+            }
         });
+
+        // ฟังก์ชันแปลงไฟล์เป็น Base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
     </script>
 </body>
 </html>
