@@ -19,7 +19,6 @@
         }
         .slide.active { opacity: 1; z-index: 10; }
         
-        /* บังคับรูปภาพให้พอดีหน้าจอ */
         .slide img {
             max-width: 100%; max-height: 100%;
             object-fit: contain; 
@@ -35,7 +34,7 @@
 </head>
 <body>
 
-    <div id="loader" class="loader">กำลังโหลดรูปล่าสุดจากระบบ...</div>
+    <div id="loader" class="loader">กำลังโหลดรูปภาพ...</div>
     <div id="slideshow-container"></div>
 
     <script>
@@ -50,7 +49,7 @@
                 const data = await response.json();
                 
                 if (data.status === 'error' || data.error) {
-                    document.getElementById('loader').innerHTML = `เกิดข้อผิดพลาดจากฝั่ง Google:<br><span style="color:#ff6b6b; font-size:1rem;">${data.message || data.error}</span>`;
+                    document.getElementById('loader').innerHTML = `เกิดข้อผิดพลาด:<br><span style="color:#ff6b6b;">${data.message || data.error}</span>`;
                     return;
                 }
 
@@ -60,12 +59,9 @@
                     document.getElementById('loader').style.display = 'none';
                     initSlideshow();
                 } else {
-                    document.getElementById('loader').innerText = 'ไม่พบรูปภาพใน Google Sheets (กรุณาอัปโหลดใหม่)';
+                    document.getElementById('loader').innerText = 'ไม่พบรูปภาพในระบบ (กรุณาอัปโหลดใหม่)';
                 }
             } catch (error) {
-                console.error("Fetch Error:", error);
-                
-                // ใช้แผนสำรองในกรณีที่ติดปัญหา CORS บนเบราว์เซอร์
                 try {
                     const res = await fetch(SCRIPT_URL + '?action=get');
                     images = await res.json();
@@ -74,7 +70,7 @@
                         initSlideshow();
                     }
                 } catch(e) {
-                     document.getElementById('loader').innerHTML = `ดึงข้อมูลจากระบบไม่สำเร็จ<br><span style="font-size: 0.9rem; color:#ff6b6b;">หากหน้าจอค้างหน้านี้ ลองเช็กอินเทอร์เน็ตหรือรีเฟรชอีกครั้ง</span>`;
+                     document.getElementById('loader').innerHTML = `กำลังดึงข้อมูล...`;
                 }
             }
         }
@@ -83,16 +79,26 @@
             const container = document.getElementById('slideshow-container');
             container.innerHTML = '';
             
-            // เปลี่ยนจากการใช้ Background-image มาเป็นแท็ก <img> เพื่อแก้ปัญหาจอดำ
             images.forEach((url, index) => {
                 const div = document.createElement('div');
                 div.className = 'slide' + (index === 0 ? ' active' : '');
                 
                 const img = document.createElement('img');
-                img.src = url;
-                // ป้องกันรูปภาพโหลดไม่ขึ้นหรือโดนบล็อก
+                
+                // --- ส่วนที่แก้ไข: แปลงลิงก์เพื่อหลบการบล็อกของ Google Drive ---
+                let finalUrl = url;
+                // ค้นหา ID ของไฟล์จาก URL เดิม
+                const idMatch = url.match(/id=([a-zA-Z0-9_-]+)/);
+                if (idMatch && idMatch[1]) {
+                    // ใช้ Thumbnail API ความละเอียด Full HD (w1920) แทน
+                    finalUrl = `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1920`;
+                }
+                // --------------------------------------------------------
+
+                img.src = finalUrl;
+                
                 img.onerror = function() {
-                    console.log("ไม่สามารถโหลดรูปนี้ได้:", url);
+                    console.log("ไม่สามารถโหลดรูปนี้ได้:", finalUrl);
                 };
                 
                 div.appendChild(img);
@@ -102,7 +108,6 @@
             const slides = document.querySelectorAll('.slide');
             if(slides.length <= 1) return; 
             
-            // สลับรูปภาพทุกๆ 10 วินาที
             setInterval(() => {
                 slides[currentIndex].classList.remove('active');
                 currentIndex = (currentIndex + 1) % slides.length;
