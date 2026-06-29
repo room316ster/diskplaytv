@@ -12,7 +12,6 @@
             display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* ----- ระบบอักษรวิ่ง (Marquee) ----- */
         .marquee-container {
             width: 100%; background: #111827; color: #facc15; 
             padding: 12px 0; overflow: hidden; white-space: nowrap; z-index: 20;
@@ -27,7 +26,6 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* ----- ส่วนของรูปภาพ ----- */
         #slideshow-wrapper {
             flex: 1; position: relative; overflow: hidden; background-color: #000;
         }
@@ -38,14 +36,12 @@
         }
         .slide.active { opacity: 1; z-index: 10; }
         
-        /* แก้ไขตรงนี้: เปลี่ยนจาก cover เป็น contain เพื่อให้อยู่ในกรอบ 100% */
         .slide img { 
             width: 100%; 
             height: 100%; 
             object-fit: contain; 
         }
 
-        /* ----- แถบ Progress และ Hint ----- */
         #progress-container {
             position: absolute; bottom: 0; left: 0;
             width: 100%; height: 6px; background: rgba(0,0,0,0.5); z-index: 20;
@@ -66,7 +62,6 @@
 </head>
 <body>
 
-    <!-- Header Marquee -->
     <div class="marquee-container border-b-4 border-yellow-500">
         <div id="header-text" class="marquee-content">กำลังโหลดข้อมูล...</div>
     </div>
@@ -78,18 +73,17 @@
         <div id="progress-container"><div id="progress-bar"></div></div>
     </div>
 
-    <!-- Footer Marquee -->
     <div class="marquee-container border-t-4 border-yellow-500">
         <div id="footer-text" class="marquee-content">กำลังโหลดข้อมูล...</div>
     </div>
 
     <script>
-        // *** อย่าลืมใส่ Web App URL ล่าสุดของคุณตรงนี้ ***
+        // *** ใส่ Web App URL ของคุณตรงนี้ ***
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg1slFWJbXcdWV6VuQHd4nj5khVvjPWpqXC920AdoUa3GQC7-uAvkUDcmPeNpdhnvp/exec';
-        const SLIDE_DURATION = 10000; 
         const SYNC_INTERVAL = 5 * 60 * 1000; 
 
-        let currentConfig = { images: [], header: '', footer: '' };
+        // โครงสร้าง Config ตอนนี้จะมี duration มาด้วย (หน่วยเป็นวินาที)
+        let currentConfig = { images: [], header: '', footer: '', duration: 10 };
         let currentIndex = 0;
         let slideInterval, progressTimeout;
 
@@ -110,10 +104,19 @@
                 
                 if (data.status === 'error' || data.error) return;
 
+                const newDuration = parseInt(data.duration) || 10;
+
+                // ตรวจสอบว่ามีการเปลี่ยนแปลงใดๆ รวมถึงระยะเวลาหรือไม่
                 if (JSON.stringify(currentConfig.images) !== JSON.stringify(data.images) ||
-                    currentConfig.header !== data.header || currentConfig.footer !== data.footer) {
+                    currentConfig.header !== data.header || currentConfig.footer !== data.footer ||
+                    currentConfig.duration !== newDuration) {
                     
-                    currentConfig = data;
+                    currentConfig = {
+                        images: data.images,
+                        header: data.header,
+                        footer: data.footer,
+                        duration: newDuration
+                    };
                     
                     document.getElementById('header-text').innerText = data.header;
                     document.getElementById('footer-text').innerText = data.footer;
@@ -159,22 +162,27 @@
             currentIndex = 0;
             animateProgressBar();
 
+            // ใช้ค่าเวลาจากการตั้งค่า (แปลงจากวินาทีเป็นมิลลิวินาที)
+            const msDuration = currentConfig.duration * 1000;
+
             slideInterval = setInterval(() => {
                 slides[currentIndex].classList.remove('active');
                 currentIndex = (currentIndex + 1) % slides.length;
                 slides[currentIndex].classList.add('active');
                 animateProgressBar();
-            }, SLIDE_DURATION); 
+            }, msDuration); 
         }
 
         function animateProgressBar() {
+            const msDuration = currentConfig.duration * 1000;
             const bar = document.getElementById('progress-bar');
             bar.style.transition = 'none';
             bar.style.width = '0%';
             
             clearTimeout(progressTimeout);
             progressTimeout = setTimeout(() => {
-                bar.style.transition = `width ${SLIDE_DURATION}ms linear`;
+                // ความเร็วในการวิ่งของแถบสัมพันธ์กับเวลาที่ตั้งค่า
+                bar.style.transition = `width ${msDuration}ms linear`;
                 bar.style.width = '100%';
             }, 50); 
         }
