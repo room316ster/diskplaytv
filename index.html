@@ -23,16 +23,17 @@
             color: #fff; font-family: sans-serif; text-align: center;
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%); font-size: 1.2rem;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body>
 
-    <div id="loader" class="loader">กำลังตรวจสอบและโหลดรูปภาพจากระบบ...</div>
+    <div id="loader" class="loader">กำลังโหลดรูปล่าสุดจากระบบ...</div>
     <div id="slideshow-container"></div>
 
     <script>
-        // *** ใส่ Web App URL ตัวล่าสุดของคุณที่ได้จากการ Deploy ข้อแรกแทนที่ตรงนี้ ***
+        // SCRIPT_URL ล่าสุดของคุณ
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg1slFWJbXcdWV6VuQHd4nj5khVvjPWpqXC920AdoUa3GQC7-uAvkUDcmPeNpdhnvp/exec';
         let images = [];
         let currentIndex = 0;
@@ -42,9 +43,9 @@
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
                 
-                // ตรวจสอบว่าข้อมูลส่งกลับมาเป็น Error หรือไม่
+                // ถ้าระบบส่ง Error มา (กรณีตั้งสิทธิ์ Sheet ผิด)
                 if (data.status === 'error' || data.error) {
-                    document.getElementById('loader').innerHTML = `เกิดข้อผิดพลาดจาก Google Script:<br><span style="color:red;">${data.message || data.error}</span>`;
+                    document.getElementById('loader').innerHTML = `เกิดข้อผิดพลาดจากฝั่ง Google:<br><span style="color:#ff6b6b; font-size:1rem;">${data.message || data.error}</span>`;
                     return;
                 }
 
@@ -54,10 +55,11 @@
                     document.getElementById('loader').style.display = 'none';
                     initSlideshow();
                 } else {
-                    document.getElementById('loader').innerText = 'ไม่พบลิงก์รูปภาพใน Google Sheets (กรุณาลองอัปโหลดรูปภาพผ่านหน้า Admin ก่อน)';
+                    document.getElementById('loader').innerText = 'ไม่พบรูปภาพใน Google Sheets (กรุณาอัปโหลดใหม่)';
                 }
             } catch (error) {
-                document.getElementById('loader').innerHTML = `เชื่อมต่อกับเซิร์ฟเวอร์ไม่สำเร็จ (CORS / URL ผิดพลาด)<br><span style="color:red;">${error.toString()}</span>`;
+                console.error("Fetch Error:", error);
+                document.getElementById('loader').innerHTML = `ดึงข้อมูลจากระบบไม่สำเร็จ<br><span style="font-size: 0.9rem; color:#ff6b6b;">${error.toString()}</span><br><br><span style="font-size: 0.9rem; color:#aaa;">(ลองกดรีเฟรชหน้าเว็บอีกครั้ง)</span>`;
             }
         }
 
@@ -73,13 +75,14 @@
             });
 
             const slides = document.querySelectorAll('.slide');
-            if(slides.length <= 1) return; // มีรูปเดียวไม่ต้องสลับสไลด์
+            if(slides.length <= 1) return; 
             
+            // สลับรูปภาพทุกๆ 10 วินาที
             setInterval(() => {
                 slides[currentIndex].classList.remove('active');
                 currentIndex = (currentIndex + 1) % slides.length;
                 slides[currentIndex].classList.add('active');
-            }, 10000); // แสดงสไลด์ละ 10 วินาที
+            }, 10000); 
         }
 
         fetchImages();
