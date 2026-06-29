@@ -14,13 +14,13 @@
 
         /* ----- ระบบอักษรวิ่ง (Marquee) ----- */
         .marquee-container {
-            width: 100%; background: #111827; color: #facc15; /* พื้นน้ำเงินเข้ม ตัวหนังสือเหลืองทอง */
+            width: 100%; background: #111827; color: #facc15; 
             padding: 12px 0; overflow: hidden; white-space: nowrap; z-index: 20;
             box-shadow: 0 0 15px rgba(0,0,0,0.8); font-size: 1.8rem; font-weight: bold;
         }
         .marquee-content {
             display: inline-block; padding-left: 100%;
-            animation: marquee 20s linear infinite; /* ความเร็วอักษรวิ่ง 20 วินาที */
+            animation: marquee 20s linear infinite;
         }
         @keyframes marquee {
             0% { transform: translateX(0); }
@@ -37,7 +37,13 @@
             display: flex; justify-content: center; align-items: center;
         }
         .slide.active { opacity: 1; z-index: 10; }
-        .slide img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* แก้ไขตรงนี้: เปลี่ยนจาก cover เป็น contain เพื่อให้อยู่ในกรอบ 100% */
+        .slide img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+        }
 
         /* ----- แถบ Progress และ Hint ----- */
         #progress-container {
@@ -78,8 +84,8 @@
     </div>
 
     <script>
-        // *** ใส่ Web App URL ของคุณตรงนี้ ***
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg1slFWJbXcdWV6VuQHd4nj5khVvjPWpqXC920AdoUa3GQC7-uAvkUDcmPeNpdhnvp/exec';
+        // *** อย่าลืมใส่ Web App URL ล่าสุดของคุณตรงนี้ ***
+        const SCRIPT_URL = 'ใส่_URL_ล่าสุดที่นี่';
         const SLIDE_DURATION = 10000; 
         const SYNC_INTERVAL = 5 * 60 * 1000; 
 
@@ -104,13 +110,11 @@
                 
                 if (data.status === 'error' || data.error) return;
 
-                // ตรวจสอบว่ามีการอัปเดตทั้งรูปภาพ และ ข้อความ หรือไม่
                 if (JSON.stringify(currentConfig.images) !== JSON.stringify(data.images) ||
                     currentConfig.header !== data.header || currentConfig.footer !== data.footer) {
                     
                     currentConfig = data;
                     
-                    // อัปเดตข้อความวิ่ง
                     document.getElementById('header-text').innerText = data.header;
                     document.getElementById('footer-text').innerText = data.footer;
 
