@@ -46,13 +46,16 @@
                 <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">อัปโหลดรูปภาพใหม่</h3>
                 <form id="uploadForm" class="space-y-4 mt-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">เลือกหน้าจอที่จะแสดงผล</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เลือกตำแหน่งหน้าจอที่จะให้ภาพแสดง</label>
                         <select id="uploadTarget" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 bg-gray-50">
-                            <option value="right">▶️ รูปฝั่งขวา (สลับเป็นสไลด์โชว์)</option>
-                            <option value="left">⏹️ รูปฝั่งซ้าย (ภาพนิ่ง)</option>
+                            <option value="right">▶️ รูปคอลัมน์ขวา (สลับเป็นสไลด์โชว์ - เลือกได้หลายรูป)</option>
+                            <option value="left">⏹️ รูปคอลัมน์ซ้าย (ภาพนิ่ง)</option>
                         </select>
                     </div>
-                    <input type="file" id="fileInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border" multiple required>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เลือกไฟล์รูปภาพ</label>
+                        <input type="file" id="fileInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border" multiple required>
+                    </div>
                     <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition shadow">เริ่มอัปโหลดรูป</button>
                 </form>
             </div>
@@ -102,7 +105,6 @@
     </div>
 
     <script>
-        // *** ใส่ Web App URL ของคุณตรงนี้ ***
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg1slFWJbXcdWV6VuQHd4nj5khVvjPWpqXC920AdoUa3GQC7-uAvkUDcmPeNpdhnvp/exec';
         let dataTable;
         let idleTimer;
@@ -119,8 +121,8 @@
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
             Swal.fire({ title: 'กำลังตรวจสอบ...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
             try {
@@ -131,7 +133,9 @@
                     sessionStorage.setItem('isLoggedIn', 'true');
                     showAdminDashboard();
                 } else { Swal.fire('ข้อมูลไม่ถูกต้อง', 'Username หรือ Password ผิด!', 'error'); }
-            } catch (error) { Swal.fire('ผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); }
+            } catch (error) { 
+                Swal.fire('ผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); 
+            }
         });
 
         function showAdminDashboard() {
@@ -185,30 +189,46 @@
             btn.disabled = false; btn.innerText = 'บันทึกการตั้งค่า';
         });
 
+        // ฟังก์ชันลูปอัปโหลดรูปภาพ (รองรับทีละหลายรูปทั้งซ้ายและขวา)
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const files = document.getElementById('fileInput').files;
             if (files.length === 0) return;
             const target = document.getElementById('uploadTarget').value;
             const btn = document.getElementById('submitBtn');
+            
             btn.disabled = true;
-            Swal.fire({ title: 'กำลังอัปโหลด...', html: `ประมวลผล (0/${files.length})`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            // แสดงหน้าจอแจ้งเตือนการอัปโหลดแบบวนลูป
+            Swal.fire({ 
+                title: 'กำลังอัปโหลดรูปภาพ...', 
+                html: `กำลังประมวลผลไฟล์ (0/${files.length})`, 
+                allowOutsideClick: false, 
+                didOpen: () => Swal.showLoading() 
+            });
 
             let successCount = 0;
             for (let i = 0; i < files.length; i++) {
-                Swal.getHtmlContainer().innerText = `กำลังส่งรูปที่ ${i + 1}/${files.length}`;
+                Swal.getHtmlContainer().innerText = `กำลังส่งรูปที่ ${i + 1}/${files.length}: ${files[i].name}`;
                 try {
                     const base64Data = await fileToBase64(files[i]);
                     await fetch(SCRIPT_URL, {
-                        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                        method: 'POST', 
+                        mode: 'no-cors', 
+                        headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({ target: target, filename: files[i].name, mimeType: files[i].type, base64: base64Data })
                     });
                     successCount++;
-                } catch (e) {}
+                } catch (e) {
+                    console.error("Upload failed for:", files[i].name, e);
+                }
             }
+            
             btn.disabled = false;
-            Swal.fire('สำเร็จ!', `เพิ่ม ${successCount} รูปเข้าสู่ระบบแล้ว`, 'success');
+            Swal.fire('สำเร็จ!', `เพิ่มรูปภาพจำนวน ${successCount} รูปเข้าสู่ระบบฝั่ง ${target === 'left' ? 'ซ้าย' : 'ขวา'} เรียบร้อยแล้ว`, 'success');
             document.getElementById('uploadForm').reset();
+            
+            // รีโหลดตารางข้อมูลใหม่
             setTimeout(loadTableData, 1500); 
         });
 
