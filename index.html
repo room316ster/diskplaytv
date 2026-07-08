@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slideshow Display</title>
+    <title>Slideshow Display - Split Screen</title>
     <link rel="icon" href="data:,">
     <style>
         body, html {
@@ -12,6 +12,7 @@
             display: flex; flex-direction: column; overflow: hidden;
         }
 
+        /* ----- ระบบอักษรวิ่ง (Marquee) ----- */
         .marquee-container {
             width: 100%; background: #111827; color: #facc15; 
             padding: 12px 0; overflow: hidden; white-space: nowrap; z-index: 20;
@@ -19,7 +20,6 @@
         }
         .marquee-content {
             display: inline-block; padding-left: 100%;
-            /* เราจะปรับความเร็ว 20s จากโค้ด Javascript แทนครับ */
             animation: marquee 20s linear infinite; 
         }
         @keyframes marquee {
@@ -27,8 +27,21 @@
             100% { transform: translateX(-100%); }
         }
 
-        #slideshow-wrapper {
-            flex: 1; position: relative; overflow: hidden; background-color: #000;
+        /* ----- โครงสร้างหลักแบ่งหน้าจอตรงกลาง ----- */
+        #main-content-wrapper {
+            flex: 1; display: flex; flex-direction: row; overflow: hidden; background-color: #000; position: relative;
+        }
+
+        /* คอลัมน์ซ้าย (30%) - แสดงภาพนิ่งตลอดเวลา */
+        #left-column {
+            width: 30%; height: 100%; border-right: 4px solid #1f2937;
+            display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #050505;
+        }
+        #left-column img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* คอลัมน์ขวา (70%) - สไลด์โชว์เปลี่ยนรูป */
+        #right-column {
+            width: 70%; height: 100%; position: relative; overflow: hidden;
         }
         .slide {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -36,9 +49,9 @@
             display: flex; justify-content: center; align-items: center;
         }
         .slide.active { opacity: 1; z-index: 10; }
-        
         .slide img { width: 100%; height: 100%; object-fit: contain; }
 
+        /* ----- แถบ Progress และ Hint ----- */
         #progress-container {
             position: absolute; bottom: 0; left: 0;
             width: 100%; height: 6px; background: rgba(0,0,0,0.5); z-index: 20;
@@ -63,11 +76,18 @@
         <div id="header-text" class="marquee-content">กำลังโหลดข้อมูล...</div>
     </div>
 
-    <div id="slideshow-wrapper">
+    <div id="main-content-wrapper">
         <div id="loader" class="loader">กำลังโหลดรูปภาพ...</div>
         <div id="hint">ดับเบิลคลิกที่หน้าจอเพื่อเปิดเต็มจอ (Fullscreen)</div>
-        <div id="slideshow-container"></div>
-        <div id="progress-container"><div id="progress-bar"></div></div>
+        
+        <div id="left-column">
+            <img id="static-img" src="" style="display:none;" alt="ภาพหลัก">
+        </div>
+        
+        <div id="right-column">
+            <div id="slideshow-container"></div>
+            <div id="progress-container"><div id="progress-bar"></div></div>
+        </div>
     </div>
 
     <div class="marquee-container border-t-4 border-yellow-500">
@@ -83,7 +103,7 @@
         let currentIndex = 0;
         let slideInterval, progressTimeout;
 
-        document.getElementById('slideshow-wrapper').addEventListener('dblclick', () => {
+        document.getElementById('main-content-wrapper').addEventListener('dblclick', () => {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
             } else {
@@ -93,12 +113,19 @@
 
         setTimeout(() => { document.getElementById('hint').style.opacity = '0'; }, 5000);
 
-        // ฟังก์ชันอัปเดตความเร็วข้อความวิ่ง
         function updateMarqueeSpeed(speedInSeconds) {
-            const elements = document.querySelectorAll('.marquee-content');
-            elements.forEach(el => {
+            document.querySelectorAll('.marquee-content').forEach(el => {
                 el.style.animationDuration = `${speedInSeconds}s`;
             });
+        }
+
+        // ฟังก์ชันช่วยแปลงลิงก์ Google Drive เป็นลิงก์ตรง
+        function getCleanUrl(url) {
+            if (url.includes('googleusercontent.com') || url.includes('lh3.google')) {
+                return url;
+            }
+            const idMatch = url.match(/id=([a-zA-Z0-9_-]+)/);
+            return idMatch ? `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1920` : url;
         }
 
         async function fetchImages(isAutoSync = false) {
@@ -111,28 +138,32 @@
                 const newDuration = parseInt(data.duration) || 10;
                 const newMarqueeSpeed = parseInt(data.marqueeSpeed) || 20;
 
-                // ตรวจสอบความเปลี่ยนแปลง
                 if (JSON.stringify(currentConfig.images) !== JSON.stringify(data.images) ||
                     currentConfig.header !== data.header || currentConfig.footer !== data.footer ||
                     currentConfig.duration !== newDuration || currentConfig.marqueeSpeed !== newMarqueeSpeed) {
                     
                     currentConfig = {
-                        images: data.images,
-                        header: data.header,
-                        footer: data.footer,
-                        duration: newDuration,
-                        marqueeSpeed: newMarqueeSpeed
+                        images: data.images, header: data.header, footer: data.footer,
+                        duration: newDuration, marqueeSpeed: newMarqueeSpeed
                     };
                     
                     document.getElementById('header-text').innerText = data.header;
                     document.getElementById('footer-text').innerText = data.footer;
-                    
-                    // อัปเดตความเร็วข้อความวิ่ง
                     updateMarqueeSpeed(newMarqueeSpeed);
 
                     if (currentConfig.images.length > 0) {
                         document.getElementById('loader').style.display = 'none';
-                        initSlideshow();
+                        
+                        // --- การแบ่งหน้าที่ของรูปภาพ ---
+                        // 1. นำรูปแรกสุด (ตัวล่าสุดที่ดึงมา) ไปล็อกไว้ที่ฝั่งซ้าย
+                        const leftImgElement = document.getElementById('static-img');
+                        leftImgElement.src = getCleanUrl(currentConfig.images[0]);
+                        leftImgElement.style.display = 'block';
+
+                        // 2. เอารูปที่เหลือทั้งหมด (รูปที่ 2 เป็นต้นไป) ไปรันสไลด์ฝั่งขวา
+                        // หากมีรูปเดียวในระบบ จะแสดงฝั่งขวาซ้ำรูปฝั่งซ้ายไปก่อน
+                        const slideImages = currentConfig.images.length > 1 ? currentConfig.images.slice(1) : currentConfig.images;
+                        initSlideshow(slideImages);
                     }
                 }
             } catch (error) {
@@ -140,21 +171,16 @@
             }
         }
 
-        function initSlideshow() {
+        function initSlideshow(slideImages) {
             const container = document.getElementById('slideshow-container');
             container.innerHTML = '';
             
-            currentConfig.images.forEach((url, index) => {
+            slideImages.forEach((url, index) => {
                 const div = document.createElement('div');
                 div.className = 'slide' + (index === 0 ? ' active' : '');
                 
                 const img = document.createElement('img');
-                let finalUrl = url;
-                if (!url.includes('googleusercontent.com') && !url.includes('lh3.google')) {
-                    const idMatch = url.match(/id=([a-zA-Z0-9_-]+)/);
-                    if (idMatch) finalUrl = `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1920`;
-                }
-                img.src = finalUrl;
+                img.src = getCleanUrl(url);
                 
                 div.appendChild(img);
                 container.appendChild(div);
@@ -172,7 +198,6 @@
             animateProgressBar();
 
             const msDuration = currentConfig.duration * 1000;
-
             slideInterval = setInterval(() => {
                 slides[currentIndex].classList.remove('active');
                 currentIndex = (currentIndex + 1) % slides.length;
